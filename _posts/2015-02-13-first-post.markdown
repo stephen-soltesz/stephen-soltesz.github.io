@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "First Post Test"
-categories: jekyll update
+categories: docs
 ---
 
 This is an example of posts for the future.
