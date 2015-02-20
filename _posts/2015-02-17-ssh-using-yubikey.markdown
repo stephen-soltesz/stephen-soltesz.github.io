@@ -1,41 +1,41 @@
 ---
 layout: post
-title:  "SSH Using Yubikey NEO"
+title:  "Using the Yubikey NEO for SSH"
 categories: howto
 ---
 
-Steps:
+<div id="table_of_content"/>
 
-* - Add Yubico ppa repositories.
-* - Add yubikey udev rules so that user can modify yubikey.
-* - yk personalize, change mode to support OpenGPG. 0x82
-* - install gnupg, gnupg-agent, & scdaemon.
-* - generate gpg key (yubico steps link) &  move keys to neo.
-* - configure gpg-agent.conf & scdaemon.conf for logging
-* (note that gpg --card-status will return an error when scdaemon is running).
-* - setup `/etc/X11/Xsession.d/90x11-common_gpg-agent` to startup gpg-agent.
-* - setup .bashrc to export env variables.
-* ssh-add -L 
-* ssh to-some-host
+# Goals
 
-* Recovery Tips.
- - key pass phrase vs pin vs admin pin.
- - unblock pin.
+SSH keys are often stored in the local file system. A remote attacker who gains
+access to your laptop or workstation can copy your SSH private keys.  Even if
+protected by a passphrase, the private keys are loaded unencrypted in memory by
+ssh-agent.
 
-Setup Yubikey Neo OpenGPG Smart Card applet as SSH agent.
+If your workstation or laptop were compromised by a remote
+attacker, then your SSH keys theft by a remote attacker if your system is
+compromised. They may be loaded into ssh-agent This post describes how to use
+the Yubikey Neo to store a hardware-secured SSH key. In the end, SSH will use
+the Neo for authentication.
 
-## Introduction x
+* Enable the Yubikey Neo OpenPGP SmartCard applet.
+* Load the Neo with a GPG Authentication key.
+* Add `gpg-agent` to system-wide startup scripts.
+* Configure `gpg-agent` to use the Yubikey Neo for SSH authentication and login.
 
-* http://spin.atomicobject.com/2013/09/25/gpg-gnu-privacy-guard/
-* https://github.com/Yubico/ykneo-openpgp
-* https://developers.yubico.com/yubikey-neo-manager/
-* https://developers.yubico.com/ykneo-openpgp/CardEdit.html
+Non-goals:
+
+* Provide background for PGP or outline best-practices for operational security.
+* SmartCards have three keys for signing, encrypting, and authenticating. This
+  post is only concerned with the authentication key. 
 
 {% highlight console %}
 {% endhighlight %}
 
+# Package Installation & Setup
 
-## Yubico PPA repository
+## Add ppa:yubico/stable Apt Repository
 
 {% highlight console %}
 $ sudo add-apt-repository ppa:yubico/stable
@@ -54,7 +54,20 @@ OK
 $ sudo apt-get update -qq
 {% endhighlight %}
 
-## Add Yubico udev rules
+## Install GPG & Yubico Packages
+
+{% highlight console %}
+$ sudo apt-get install yubikey-personalization yubikey-neo-manager ykneomgr
+$ sudo apt-get install gnupg-agent scdaemon
+Reading package lists... Done
+Building dependency tree       
+Reading state information... Done
+...
+Setting up gnupg-agent (2.0.22-3ubuntu1.1) ...
+Setting up scdaemon (2.0.22-3ubuntu1.1) ...
+{% endhighlight %}
+
+## Add udev Rules for Yubikey
 
 NOTE: As of 2015-02-17, these rules are not part of the packages in yubico's PPA. At some point they will be added, and these steps will be unnecessary. Before downloading these files, check to see if they exist in `/etc/udev/rules.d/`.
 {% highlight console %}
@@ -64,8 +77,11 @@ $ for file in 69-yubikey.rules 70-yubikey.rules ; do
 $ sudo cp --no-clobber 69-yubikey.rules 70-yubikey.rules /etc/udev/rules.d/
 {% endhighlight %}
 
-## ykpersonalize
+# GPG Key & Yubikey Initialization
 
+## Enable OpenPGP on Yubikey (CCID Mode)
+
+* Check CCID mode. Unplug & Plug NEO in again.
 Use ykpersonalize or neoman. ykneomgr fails.
 Before setting the mode that enables the OpenPGP applet, check the current mode.
 
@@ -80,40 +96,8 @@ error: ykneomgr_list_devices (-4): Backend error
 # The graphical `neoman` gives a way to view and set the CCID mode (e.g. OpenPGP).
 $ neoman
 # Alternately, you can set the mode explicitly.
-$ ykpersonalize -m82
+$ ykpersonalize -m82:15:60
 {% endhighlight %}
-
-## Install gnupg-agent & scdaemon
-
-{% highlight console %}
-$ sudo apt-get install gnupg-agent scdaemon
-Reading package lists... Done
-Building dependency tree       
-Reading state information... Done
-The following packages were automatically installed and are no longer required:
-  libconfig-tiny-perl libfile-touch-perl
-Use 'apt-get autoremove' to remove them.
-The following NEW packages will be installed:
-  gnupg-agent scdaemon
-0 upgraded, 2 newly installed, 0 to remove and 0 not upgraded.
-Need to get 0 B/393 kB of archives.
-After this operation, 1,488 kB of additional disk space will be used.
-Selecting previously unselected package gnupg-agent.
-(Reading database ... 201128 files and directories currently installed.)
-Preparing to unpack .../gnupg-agent_2.0.22-3ubuntu1.1_amd64.deb ...
-Unpacking gnupg-agent (2.0.22-3ubuntu1.1) ...
-Selecting previously unselected package scdaemon.
-Preparing to unpack .../scdaemon_2.0.22-3ubuntu1.1_amd64.deb ...
-Unpacking scdaemon (2.0.22-3ubuntu1.1) ...
-Processing triggers for man-db (2.6.7.1-1ubuntu1) ...
-Setting up gnupg-agent (2.0.22-3ubuntu1.1) ...
-Setting up scdaemon (2.0.22-3ubuntu1.1) ...
-{% endhighlight %}
-
-## Enable CCID Mode
-
-* Install the yubikey-neo-manager.
-* Check CCID mode. Unplug & Plug NEO in again.
 
 {% highlight console %}
 # TODO: add examples for ykneomgr.
@@ -167,7 +151,9 @@ gpg> keytocard
 gpg> quit
 {% endhighlight %}
 
-## Configure Personal gpg-agent
+# Automate gpg-agent
+
+## Configure gpg-agent
 
 The most important options are:
 
@@ -190,8 +176,7 @@ $ cat .gnupg/scdaemon.conf
 log-file /home/<user>/scdaemon.log
 {% endhighlight %}
 
-
-## Create Xsession script to start gpg-agent
+## Create Xsession Startup Script for gpg-agent
 
 * Create `/etc/X11/Xsession.d/90x11-common_gpg-agent`.
 * Edit `/etc/X11/Xsession.options` to include use-gpg-agent and disable use-ssh-agent.
@@ -224,7 +209,7 @@ fi
 {% endhighlight %}
 
 
-## Verify SSH Key is Present
+## Verify SSH Key Works
 
 Log out and log back in again (or perform equivalent steps based on the commands above).
 
@@ -239,6 +224,40 @@ $ ssh-add -L
 ssh-rsa AAAAB3NzzD2aBABLKJED30...aBABLKJEd30aBABLKJEd30 cardno:000003333333
 {% endhighlight %}
 
+# Tips
+
+## One process can open the SmartCard at a time.
+If `scdaemon` is running, then `gpg --card-status` will produce an error.
+
+{% highlight console %}
+$ gpg --card-status
+gpg: pcsc_list_readers failed: unknown PC/SC error code (0x8010002e)
+gpg: card reader not available
+gpg: OpenPGP card not available: general error
+{% endhighlight %}
+
+## Passwords and PINs, Oh My
+
+If GPG keys are generated outside of the key, then you will be asked to assign the key a passphrase. When moving the key to the card, only the PIN and Admin PINs are relevant.
+
+Note: the PINs do not need to be numbers only.
+Reset the PINs using:
+
+{% highlight console %}
+{% endhighlight %}
+
+If you happen to enter your key PIN incorrectly it will be blocked, and you need to unblock it using the Admin PIN.
+ - unblock pin.
+
+# References
+
+These are some of the pages I used when configuring my own NEO.
+
+* [Excellent GPG introduction](http://spin.atomicobject.com/2013/09/25/gpg-gnu-privacy-guard/)
+* [Yubikey NEO OpenPGP applet source](https://github.com/Yubico/ykneo-openpgp) -- Unfortunately, the Yubikey hardware is closed. So Yubikey NEO owners can neither update their Yubikey, nor can they verify that this is the code running on their Yubikey.
+* [Yubikey NEO Manager source](https://developers.yubico.com/yubikey-neo-manager/) -- Used to enable the OpenPGP applet.
+* [Import a GPG key Yubikey NEO](https://developers.yubico.com/ykneo-openpgp/KeyImport.html)
+* [GPG keys can be used for SSH!?](https://blog.habets.se/2013/02/GPG-and-SSH-with-Yubikey-NEO)
 
 
 Example link [Jekyll docs][jekyll] is great.
