@@ -4,3 +4,10 @@ layout: default
 <div id="post">
 {{ content }}
 </div>
+
+<!-- Draw a Table of Contents when #table_of_content is found in the post. -->
+<script type="text/javascript">
+$("#table_of_content").toc({
+    showAlways:true,
+});
+</script>

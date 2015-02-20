@@ -22,12 +22,16 @@ body {
   text-align: center;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1 {
+  font-size: 115%;
+}
+h2, h3, h4, h5, h6 {
   font-size: 100%;
 }
 
-h1 {
+h1, h2 {
   margin-bottom: 1em;
+  margin-top: 1em;
 }
 
 p {
@@ -156,7 +160,7 @@ ul.posts {
 
   #post pre {
     border: 1px solid #ddd;
-    background-color: #eef;
+    background-color: #eee;
     padding: 0 .4em;
   }
 
@@ -167,7 +171,7 @@ ul.posts {
 
   #post code {
     border: 1px solid #ddd;
-    background-color: #eef;
+    background-color: #eee;
     font-size: 85%;
     padding: 0 .2em;
   }
