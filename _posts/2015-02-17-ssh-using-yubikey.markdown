@@ -6,45 +6,43 @@ categories: howto
 
 <div id="table_of_content"/>
 
-# Goals
+It's 10:00PM; do you know where your private keys are?
 
-SSH keys are often stored in the local file system. A remote attacker who gains
-access to your laptop or workstation can copy your SSH private keys.  Even if
-protected by a passphrase, the private keys are loaded unencrypted in memory by
-ssh-agent.
+Even if protected by a passphrase, private keys are unencrypted once loaded in 
+memory. As an example, you can dump the process memory of `ssh-agent`,
+[to extract the private keys](https://blog.netspi.com/stealing-unencrypted-ssh-agent-keys-from-memory/).
 
-If your workstation or laptop were compromised by a remote
-attacker, then your SSH keys theft by a remote attacker if your system is
-compromised. They may be loaded into ssh-agent This post describes how to use
-the Yubikey Neo to store a hardware-secured SSH key. In the end, SSH will use
-the Neo for authentication.
+This post describes how to use the _Yubikey Neo_ for hardware-secured SSH 
+authentication. This post walks through the following steps:
 
-* Enable the Yubikey Neo OpenPGP SmartCard applet.
-* Load the Neo with a GPG Authentication key.
-* Add `gpg-agent` to system-wide startup scripts.
-* Configure `gpg-agent` to use the Yubikey Neo for SSH authentication and login.
+* Enabling the Yubikey Neo OpenPGP SmartCard applet.
+* Loading the Neo with a GPG Authentication key.
+* Enabling `gpg-agent` in system-wide startup scripts.
+* Using the Yubikey NEO for SSH authentication.
 
 Non-goals:
 
-* Provide background for PGP or outline best-practices for operational security.
-* SmartCards have three keys for signing, encrypting, and authenticating. This
-  post is only concerned with the authentication key. 
+* Provide background for OpenPGP or detail additional best-practices for 
+  operational security.
+* OpenPGP SmartCards have three keys for signing, encrypting, and 
+  authenticating. This post only focuses on the authentication key. 
 
-{% highlight console %}
-{% endhighlight %}
 
 # Package Installation & Setup
 
 ## Add ppa:yubico/stable Apt Repository
+
+Yubico publishes open source libraries and utilities for managing Yubikeys.  
+Their packages are distributed by many Linux distributions, but the most current 
+versions are always available from the Yubico PPA.
 
 {% highlight console %}
 $ sudo add-apt-repository ppa:yubico/stable
  PPA for stable Yubico software.
  More info: https://launchpad.net/~yubico/+archive/ubuntu/stable
 Press [ENTER] to continue or ctrl-c to cancel adding it
-
-gpg: keyring `/tmp/tmp6n6fl1ra/secring.gpg' created
-gpg: keyring `/tmp/tmp6n6fl1ra/pubring.gpg' created
+gpg: keyring '/tmp/tmp6n6fl1ra/secring.gpg' created
+gpg: keyring '/tmp/tmp6n6fl1ra/pubring.gpg' created
 gpg: requesting key 32CBA1A9 from hkp server keyserver.ubuntu.com
 gpg: /tmp/tmp6n6fl1ra/trustdb.gpg: trustdb created
 gpg: key 32CBA1A9: public key "Launchpad PPA for Yubico" imported
@@ -56,9 +54,10 @@ $ sudo apt-get update -qq
 
 ## Install GPG & Yubico Packages
 
+Install the gnupg and Yubikey management packages.
+
 {% highlight console %}
-$ sudo apt-get install yubikey-personalization yubikey-neo-manager ykneomgr
-$ sudo apt-get install gnupg-agent scdaemon
+$ sudo apt-get install gnupg-agent scdaemon yubikey-personalization
 Reading package lists... Done
 Building dependency tree       
 Reading state information... Done
@@ -81,39 +80,38 @@ $ sudo cp --no-clobber 69-yubikey.rules 70-yubikey.rules /etc/udev/rules.d/
 
 ## Enable OpenPGP on Yubikey (CCID Mode)
 
-* Check CCID mode. Unplug & Plug NEO in again.
-Use ykpersonalize or neoman. ykneomgr fails.
-Before setting the mode that enables the OpenPGP applet, check the current mode.
+To enable the OpenPGP applet and keep using the OTP & U2F features of your NEO, 
+you need to use the mode `-m6`. Other options are available, including an 
+auto-eject, OpenPGP-only mode. See the [yubikey-personalization(1)](https://github.com/yubico/yubikey-personalization) man page for more details.
 
 {% highlight console %}
-$ apt-get install yubikey-personalization yubikey-neo-manager ykneomgr
-# The ykneomgr seems to not work as of this writing.
-$ ykneomgr -s
-error: ykneomgr_discover_match (-4): Backend error
-$ ykneomgr -l
-error: ykneomgr_list_devices (-4): Backend error
-# The ykinfo command does not include the current mode.
-# The graphical `neoman` gives a way to view and set the CCID mode (e.g. OpenPGP).
-$ neoman
-# Alternately, you can set the mode explicitly.
-$ ykpersonalize -m82:15:60
+$ ykpersonalize -m6
+Firmware version 3.3.6 Touch level 1541 Program sequence 1
+.
+The USB mode will be set to: 0x6
+.
+Commit? (y/n) [n]: y
 {% endhighlight %}
 
-{% highlight console %}
-# TODO: add examples for ykneomgr.
-$ ykneomgr --get-mode
-$ ykneomgr --set-mode
-$ ykneomgr --list-readers
-$ ykneomgr --applet-list
-{% endhighlight %}
+Unplug & plug the NEO in again.
 
 ## GPG card status.
-{% highlight console %}
-$ gpg --version
-gpg (GnuPG/MacGPG2) 2.0.22
-libgcrypt 1.5.3
-...
 
+The following steps depend on GPG version 2.0.22+.
+
+{% highlight console %}
+$ gpg-agent --version
+gpg-agent (GnuPG) 2.0.22
+libgcrypt 1.5.3
+Copyright (C) 2013 Free Software Foundation, Inc.
+License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+{% endhighlight %}
+
+Verify that you can check the card status.
+
+{% highlight console %}
 $ gpg --card-status
 Application ID ...: D2760001240102000006033664820000
 Version ..........: 2.0
@@ -137,14 +135,77 @@ General key info..: [none]
 
 ## Generate PGP key
 
-Generate gpg key and import to NEO.
-
-* https://developers.yubico.com/ykneo-openpgp/KeyImport.html
+While it is possible to generate a key _on the Yubikey NEO_ this method
+prohibits making a backup of the key. So, we'll generate the GPG key first then
+import them to the NEO. Notes taken from [key import](https://developers.yubico.com/ykneo-openpgp/KeyImport.html) guide.
 
 {% highlight console %}
 $ gpg --gen-key
+gpg (GnuPG) 1.4.16; Copyright (C) 2013 Free Software Foundation, Inc.
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
+.
+Please select what kind of key you want:
+   (1) RSA and RSA (default)
+   (2) DSA and Elgamal
+   (3) DSA (sign only)
+   (4) RSA (sign only)
+Your selection? 1
+RSA keys may be between 1024 and 4096 bits long.
+What keysize do you want? (2048) 
+Requested keysize is 2048 bits
+Please specify how long the key should be valid.
+         0 = key does not expire
+      <n>  = key expires in n days
+      <n>w = key expires in n weeks
+      <n>m = key expires in n months
+      <n>y = key expires in n years
+Key is valid for? (0) 3m
+Key expires at Fri 22 May 2015 01:31:55 AM EDT
+Is this correct? (y/N) y
+.
+You need a user ID to identify your key; the software constructs the user ID
+from the Real Name, Comment and Email Address in this form:
+    "Heinrich Heine (Der Dichter) <heinrichh@duesseldorf.de>"
+.
+Real name: fake key
+Email address: whatever@myemail.com
+Comment: test key for howto.
+You selected this USER-ID:
+    "fake key (test key for howto.) <whatever@myemail.com>"
+.
+Change (N)ame, (C)omment, (E)mail or (O)kay/(Q)uit? o
+You need a Passphrase to protect your secret key.
+.
+We need to generate a lot of random bytes. It is a good idea to perform
+some other action (type on the keyboard, move the mouse, utilize the
+disks) during the prime generation; this gives the random number
+generator a better chance to gain enough entropy.
+..+++++
+......+++++
+We need to generate a lot of random bytes. It is a good idea to perform
+some other action (type on the keyboard, move the mouse, utilize the
+disks) during the prime generation; this gives the random number
+generator a better chance to gain enough entropy.
+..+++++
+......+++++
+gpg: key 454B28A0 marked as ultimately trusted
+public and secret key created and signed.
+.
+gpg: checking the trustdb
+gpg: 3 marginal(s) needed, 1 complete(s) needed, PGP trust model
+gpg: depth: 0  valid:   3  signed:   0  trust: 0-, 0q, 0n, 0m, 0f, 3u
+gpg: next trustdb check due at 2015-05-16
+pub   2048R/454B28A0 2015-02-21 [expires: 2015-05-22]
+      Key fingerprint = FB17 D887 29FF 0A29 D1C0  3DC0 9C01 A757 454B 28A0
+uid                  fake key (test key for howto.) <whatever@myemail.com>
+sub   2048R/4EEBB175 20
+{% endhighlight %}
+
+{% highlight console %}
 $ gpg --expert --edit-key <keyid>
 gpg> addkey
+.
 $ gpg --edit-key <keyid>
 gpg> toggle
 gpg> keytocard
@@ -260,6 +321,3 @@ These are some of the pages I used when configuring my own NEO.
 * [GPG keys can be used for SSH!?](https://blog.habets.se/2013/02/GPG-and-SSH-with-Yubikey-NEO)
 
 
-Example link [Jekyll docs][jekyll] is great.
-
-[jekyll]:    http://jekyllrb.com
