@@ -160,18 +160,20 @@ ul.posts {
 
   #post pre {
     border: 1px solid #ddd;
-    background-color: #eee;
+    background-color: #f8f8f8;
     padding: 0 .4em;
   }
 
   #post ul,
   #post ol {
     margin-left: 1.35em;
+  margin-bottom: 1em;
+  margin-top: 1em;
   }
 
   #post code {
     border: 1px solid #ddd;
-    background-color: #eee;
+    background-color: #f8f8f8;
     font-size: 85%;
     padding: 0 .2em;
   }
