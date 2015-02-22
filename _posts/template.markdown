@@ -4,6 +4,8 @@ title:  "Template Title"
 categories: howto
 ---
 
+# {{ page.title }}
+
 This is the text for this article.
 
 {% highlight console %}

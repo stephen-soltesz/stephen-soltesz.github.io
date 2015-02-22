@@ -4,6 +4,8 @@ title:  "Linux CapsLock as Control in X11 & Console"
 categories: howto
 ---
 
+# {{ page.title }}
+
 Keyboards vary the [`Control` key location][location]. But, I fell in love with
 the "Unix" layout early on (where `Control` is just left of `a`). Ever since,
 I remap the `CapsLock` key as a `Control` key on every system I use regularly.
