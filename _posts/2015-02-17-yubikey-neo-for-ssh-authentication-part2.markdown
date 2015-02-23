@@ -308,7 +308,7 @@ gpg: sending command `SCD SETATTR' to agent failed: ec=4.21393
 gpg: error clearing forced signature PIN flag: general error
 {% endhighlight %}
 
-You are now ready for [part three]({% post_url 2015-02-18-yubikey-neo-for-ssh-authentication-part3 %}).
+You are now ready for [part three][part3].
 
 # References
 
@@ -321,4 +321,5 @@ These are some of the pages I used when configuring my own NEO.
 * [GPG keys can be used for SSH!?](https://blog.habets.se/2013/02/GPG-and-SSH-with-Yubikey-NEO)
 
 [part1]: {% post_url 2015-02-16-yubikey-neo-for-ssh-authentication-part1 %}
+[part3]: {% post_url 2015-02-18-yubikey-neo-for-ssh-authentication-part3 %}
 [keyimport]: https://developers.yubico.com/ykneo-openpgp/KeyImport.html
