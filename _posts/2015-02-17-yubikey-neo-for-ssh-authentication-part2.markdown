@@ -10,11 +10,9 @@ categories: howto
 
 It's 10:00PM; do you know where your private keys are?
 
-In the previous article, we:
+In the [previous article][part1], we enabled the Yubikey Neo OpenPGP applet.
 
-* [Setup the Yubikey Neo for SSH Authentication (Part 1)]({% post_url 2015-02-16-yubikey-neo-for-ssh-authentication-part1 %}).
-
-This post covers generating and loading the Neo with a GPG Authentication key.
+This post covers generating and loading the Neo with a PGP Authentication key.
 
 # Create Authentication Key
 
@@ -22,7 +20,7 @@ This post covers generating and loading the Neo with a GPG Authentication key.
 
 While it is possible to generate a key _on the Yubikey NEO_ this method
 prohibits making a backup of the key. So, we'll generate the GPG key first then
-import them to the NEO. Notes taken from [key import](https://developers.yubico.com/ykneo-openpgp/KeyImport.html) guide.
+import them to the NEO. Notes taken from [key import][keyimport] guide.
 
 By default, GPG adds the `Sign` and `Encrypt` capability to new keys. Choose
 option *8* so we can add the `Authenticate` capability.
@@ -43,7 +41,7 @@ Please select what kind of key you want:
 Your selection? 8
 {% endhighlight %}
 
-Since we only want an `Authentication` key, disable the `Sign` and `Encrypt`
+Since we only want a key to `Authenticate`, disable the `Sign` and `Encrypt`
 actions for the new key. The `Certify` capability cannot be removed.
 
 {% highlight console %}
@@ -98,8 +96,8 @@ What keysize do you want? (2048)
 Requested keysize is 2048 bits
 {% endhighlight %}
 
-OpenPGP keys can have an expiration date. Consider setting an expiration so that
-your keys will have to be rotated at some future date.
+Consider setting an expiration so that your keys will have to be rotated at
+some future date.
 
 {% highlight console %}
 Please specify how long the key should be valid.
@@ -113,7 +111,7 @@ Key expires at Sat 23 May 2015 12:58:45 AM EDT
 Is this correct? (y/N) y
 {% endhighlight %}
 
-Add personal identification information, if you like.
+Add personal information, if you like.
 
 {% highlight console %}
 You need a user ID to identify your key; the software constructs the user ID
@@ -146,8 +144,7 @@ using this program with the option "--edit-key".
 ## Optional: More Random Bytes
 
 If your system cannot generate random bytes quickly, consider installing
-[haveged](http://www.issihosts.com/haveged/). This tool is used by
-[Tails](https://tails.boum.org/).
+[haveged](http://www.issihosts.com/haveged/).
 
 {% highlight console %}
 We need to generate a lot of random bytes. It is a good idea to perform
@@ -311,7 +308,7 @@ gpg: sending command `SCD SETATTR' to agent failed: ec=4.21393
 gpg: error clearing forced signature PIN flag: general error
 {% endhighlight %}
 
-You are now ready for [part three]({% post_url 2015-02-18-yubikey-neo-for-ssh-authentication-part3 %}).
+You are now ready for [part three][part3].
 
 # References
 
@@ -323,3 +320,6 @@ These are some of the pages I used when configuring my own NEO.
 * [Import a GPG key Yubikey NEO](https://developers.yubico.com/ykneo-openpgp/KeyImport.html)
 * [GPG keys can be used for SSH!?](https://blog.habets.se/2013/02/GPG-and-SSH-with-Yubikey-NEO)
 
+[part1]: {% post_url 2015-02-16-yubikey-neo-for-ssh-authentication-part1 %}
+[part3]: {% post_url 2015-02-18-yubikey-neo-for-ssh-authentication-part3 %}
+[keyimport]: https://developers.yubico.com/ykneo-openpgp/KeyImport.html
