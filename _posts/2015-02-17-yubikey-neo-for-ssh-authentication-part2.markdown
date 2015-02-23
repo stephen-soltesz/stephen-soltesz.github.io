@@ -12,7 +12,7 @@ It's 10:00PM; do you know where your private keys are?
 
 In the previous article, we:
 
-* [Setup the Yubikey Neo for SSH Authentication]().
+* [Setup the Yubikey Neo for SSH Authentication (Part 1)]({% post_url 2015-02-16-yubikey-neo-for-ssh-authentication-part1 %}).
 
 This post covers generating and loading the Neo with a GPG Authentication key.
 
@@ -310,6 +310,8 @@ Or, `gpg-agent` & `gpg --card-edit`.
 gpg: sending command `SCD SETATTR' to agent failed: ec=4.21393
 gpg: error clearing forced signature PIN flag: general error
 {% endhighlight %}
+
+You are now ready for [part three]({% post_url 2015-02-18-yubikey-neo-for-ssh-authentication-part3 %}).
 
 # References
 

@@ -12,8 +12,8 @@ It's 10:00PM; do you know where your private keys are?
 
 In the past two articles, we:
 
-* [Setup the Yubikey Neo for SSH Authentication]().
-* [Generated keys for the Yubikey Neo]().
+* [Setup the Yubikey Neo for SSH Authentication (Part 1)]({% post_url 2015-02-16-yubikey-neo-for-ssh-authentication-part1 %}).
+* [Generated keys for the Yubikey Neo (Part 2)]({% post_url 2015-02-17-yubikey-neo-for-ssh-authentication-part2 %}).
 
 We have a _Yubikey Neo_ with a hardware-secured Authentication key.  In this
 post, we will prepare our environment for everyday use.

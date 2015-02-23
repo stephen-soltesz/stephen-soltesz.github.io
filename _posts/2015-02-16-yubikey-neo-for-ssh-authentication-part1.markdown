@@ -158,8 +158,7 @@ Authentication key: [none]
 General key info..: [none]
 {% endhighlight %}
 
-You are now ready for [part two](http://192.168.1.120:4000/howto/2015/02/22/using-yubikey-neo-for-ssh-authentication.html)
-<!-- { post_url using-yubikey-neo-for-ssh-authentication } ). -->
+You are now ready for [part two]({% post_url 2015-02-17-yubikey-neo-for-ssh-authentication-part2 %}).
 
 # References
 
