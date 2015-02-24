@@ -10,52 +10,53 @@ categories: howto
 
 It's 10:00PM; do you know where your private keys are?
 
-In the past two articles, we:
+In the last two articles, we:
 
-* [Setup the Yubikey Neo for SSH Authentication (Part 1)]({% post_url 2015-02-16-yubikey-neo-for-ssh-authentication-part1 %}).
-* [Generated keys for the Yubikey Neo (Part 2)]({% post_url 2015-02-17-yubikey-neo-for-ssh-authentication-part2 %}).
+* [Enabled the OpenPGP applet on the Yubikey Neo (Part 1)][part1]
+* [Generated keys for the Yubikey Neo Using GPG (Part 2)][part2]
 
-We have a _Yubikey Neo_ with a hardware-secured Authentication key.  In this
-post, we will prepare our environment for everyday use.
-
-This post covers the following:
+Now, we will prepare our environment for everyday use, including:
 
 * Enabling `gpg-agent` in system-wide startup scripts.
 * Using the Yubikey NEO for SSH authentication.
 
-# Automate gpg-agent
+# Auto-start gpg-agent
 
-Once the Yubikey Neo has our authentication key, SSH will interact with
-`gpg-agent`. So we want to guarantee that gpg-agent is configured and running
-when we log into our account.
+Our authentication key is loaded on the Yubikey Neo and `gpg-agent` can talk to
+the Yubikey. Ultimately, SSH will talk to `gpg-agent` using the `ssh-agent`
+protocol. So, `gpg-agent` should be configured to run as soon as we login.
 
 ## Configuration for gpg.conf & gpg-agent.conf
 
 If these files do not already exist, create them.
  
-* `~/.gnupg/gpg.conf` -- the `use-agent` directive tells GPG to use the
-  gpg-agent and the Xsession startup script uses this directive to decide to
-  start gpg-agent.
+GPG configuration: `~/.gnupg/gpg.conf`
+
+  * `use-agent` instructs GPG to use the gpg-agent, and the Xsession
+    startup script uses this setting when deciding to start gpg-agent.
 
 {% highlight console %}
-$ cat <<EOF > .gnupg/gpg.conf 
+$ cat <<EOF >> .gnupg/gpg.conf
 use-agent
 EOF
 {% endhighlight %}
 
-* `~/.gnupg/gpg-agent.conf` -- the `enable-ssh-support` directive tells gpg-agent
-to support the ssh-agent protocol.
+GPG Agent configuration: `~/.gnupg/gpg-agent.conf`
+
+ * `enable-ssh-support` tells `gpg-agent` to support the ssh-agent protocol.
 
 {% highlight console %}
-$ cat <<EOF > .gnupg/gpg-agent.conf 
+$ cat <<EOF >> .gnupg/gpg-agent.conf
 pinentry-program /usr/bin/pinentry-gtk-2
 default-cache-ttl 180
 max-cache-ttl 600
 enable-ssh-support
 {% endhighlight %}
 
-If you encounter problems later on, you can enable logging from scdaemon to get
-more diagnostics.
+Optional: `~/.gnupg/scdaemon.conf`
+
+ * If you encounter problems later on, you can enable logging from scdaemon to get
+   more diagnostics.
 
 {% highlight console %}
 $ cat <<EOF > .gnupg/scdaemon.conf
@@ -64,19 +65,26 @@ log-file ${HOME}/scdaemon.log
 
 ## Edit Xsession.options
 
-The `gnupg-agent` package includes an Xsession.d script
-(`/etc/X11/Xsession.d/90gpg-agent`) that starts gpg-agent automatically when
-it finds 'use-agent' in `$HOME/.gnupg/gpg.conf`.
+The `gnupg-agent` package includes an Xsession.d script to start `gpg-agent`.
 
-Since gpg-agent will operate as an ssh-agent, edit `/etc/X11/Xsession.options`
-and remove the option to `use-ssh-agent`.
+During user login, `/etc/X11/Xsession.d/90gpg-agent` performs these steps:
+
+ * Does `$HOME/.gnupg/gpg.conf` have `use-agent` option? If so:
+
+   - Start `gpg-agent`.
+   - `gpg-agent` writes environment variables to
+     `$HOME/.gnupg/gpg-agent-info-$HOSTNAME`.
+
+`gpg-agent` will operate as our `ssh-agent`. So, *you must remove*
+"use-ssh-agent" from `/etc/X11/Xsession.options` to prevent other Xsession
+scripts from starting a separate `ssh-agent`.
 
 ## Update .bashrc
 
-The Xsession.d script writes the gpg-agent & ssh-agent environment variables to
-`$HOME/.gnupg/gpg-agent-info-${HOSTNAME}`.
+`gpg-agent` writes environment variables to `$HOME/.gnupg/gpg-agent-info-$HOSTNAME`.
 
-Add a command to your `$HOME/.bashrc` that sources and exports these variables.
+So, add a command to your `$HOME/.bashrc` to sources and exports these
+variables.
 
 {% highlight bash %}
 GPGENV="${HOME}/.gnupg/gpg-agent-info-${HOSTNAME}"
@@ -103,7 +111,7 @@ $ ssh-add -l
 {% endhighlight %}
 
 Copy the public key to the `~/.ssh/authorized_keys` file of remote hosts you
-would like to access 
+would like to access.
 
 {% highlight console %}
 $ ssh-add -L
@@ -120,14 +128,15 @@ By default, the GNOME cache setting is:
 
 * `org.gnome.crypto.cache gpg-cache-method 'session'`.
 
-This means that you are asked for your PIN/passphrase *once per session*. This
-could be days or weeks.
+This means that you are asked for your PIN/passphrase *once per X11 session*.
+This could be days or weeks.
 
-To prompt for a passphrase more often, set `gpg-cache-method` to:
+To prompt for a passphrase more often, set `gpg-cache-method` to either:
 
-* `idle` -- like a screen saver, the timeout starts counting every use.
-* `timeout` -- is a strict limit that starts counting on first use.
+* `idle` -- like a screen saver, the ttl starts counting down after every use.
+* `timeout` -- is a strict ttl that starts counting on first use.
 
+The `gpg-cache-ttl` is in seconds.
 
 {% highlight console %}
 $ gsettings set org.gnome.crypto.cache gpg-cache-method 'idle'
@@ -144,3 +153,5 @@ These are some of the pages I used when configuring my own NEO.
 * [Import a GPG key Yubikey NEO](https://developers.yubico.com/ykneo-openpgp/KeyImport.html)
 * [GPG keys can be used for SSH!?](https://blog.habets.se/2013/02/GPG-and-SSH-with-Yubikey-NEO)
 
+[part1]: {% post_url 2015-02-16-yubikey-neo-for-ssh-authentication-part1 %}
+[part2]: {% post_url 2015-02-17-yubikey-neo-for-ssh-authentication-part2 %}
