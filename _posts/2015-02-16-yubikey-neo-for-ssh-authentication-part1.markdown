@@ -152,7 +152,7 @@ Unplug & plug the NEO in again.
 Verify that you can check the card status.
 
 {% highlight console %}
-$ gpg --card-status
+$ gpg --use-agent --card-status
 Application ID ...: D2760001240102000006033664820000
 Version ..........: 2.0
 Manufacturer .....: unknown
