@@ -129,7 +129,7 @@ applet requires that CCID mode is enabled first.
 You can use the `neoman` graphical to see what modes are currently enabled, and
 to change them:
 
-![neoman mode change]({{ site.url }}/images/neoman-modes.png =500x)
+![neoman mode change]({{ site.url }}/images/neoman-modes.png)
 
 As well, you can enable the OpenPGP applet using `ykpersonalize`. To keep using
 the OTP & U2F features of your NEO, use mode `-m6`. More options are available,

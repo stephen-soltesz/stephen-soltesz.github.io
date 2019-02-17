@@ -31,7 +31,7 @@ require extra configuration for features that are standard in
 
 For example, i3 with gnome-panel:
 
-![gnome-panel with i3]({{site.url}}/images/i3-with-gnome-panel.png =500x)
+![gnome-panel with i3]({{site.url}}/images/i3-with-gnome-panel.png)
 
 ## Configuration
 
