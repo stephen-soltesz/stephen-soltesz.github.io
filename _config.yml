@@ -2,5 +2,5 @@ name: ThinkSeeDo
 description: GitHub pages for stephen-soltesz repository.
 url: http://stephen-soltesz.github.io
 markdown: rdiscount
-highlighter: pygments
+highlighter: rouge
 paginate: 10
